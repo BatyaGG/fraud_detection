@@ -1,11 +1,10 @@
 # test_client.py
 import os
 import json
-import math
 import requests
 from datetime import date, timedelta
 
-URL = os.getenv("URL", "http://localhost:8000")
+URL = os.getenv("URL", "http://207.180.201.244:8000")
 K = int(os.getenv("TOPK", "8"))
 
 
@@ -128,7 +127,7 @@ def get_json(path):
 
 
 def main():
-    print(f"[i] Health: {get_json('/healthz')}")
+    print(f"[i] Health: {get_json('/health')}")
     print(f"[i] Version: {get_json('/version')}")
 
     rows = build_rows()
