@@ -1,4 +1,5 @@
 # app.py
+import joblib
 import os
 import traceback
 import numpy as np
@@ -9,10 +10,15 @@ from model_service.model import load_model, predict_proba_with_shap
 from model_service.transform import to_feature_frame, DEFAULT_FEATURE_ORDER, normalize_input_rows
 
 APP_VERSION = os.getenv("APP_VERSION", "lgbm_iforest_2025-09-16")
-FRAUD_THRESHOLD = float(os.getenv("FRAUD_THRESHOLD", "0.90"))  # rows with ml_score >= this are "fraud"
+FRAUD_THRESHOLD = float(os.getenv("FRAUD_THRESHOLD", "0.90"))
 
 app = Flask(__name__)
-model = load_model("weights/lightgbm.bin")  # if missing, model=None and we fallback
+# model = load_model("weights/lightgbm.bin")
+
+loaded_data = joblib.load('prod_data.joblib')
+model = loaded_data['model']
+features = loaded_data['features']
+shap_values = loaded_data['shap_values']
 
 
 @app.route("/health", methods=["GET"])
