@@ -121,7 +121,7 @@ def custom_aggregations(dest):
 # Load and preprocess data
 df = pd.read_csv('PS_20174392719_1491204439457_log.csv')
 v_c = df['nameDest'].value_counts()
-dests_unique = v_c[v_c > 1].index.values
+dests_unique = sorted(v_c[v_c > 1].index.values)
 df = df[df['nameDest'].isin(dests_unique)]
 
 df['balanceChngOrig'] = (df['newbalanceOrig'] - df['oldbalanceOrg'])
