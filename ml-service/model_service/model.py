@@ -21,7 +21,8 @@ def load_model(path: str):
     try:
         if not os.path.exists(path):
             return None
-        model = load(path)  # sklearn LGBMClassifier or lgb.Booster
+        model_data = load(path)
+        model = model_data['model']# sklearn LGBMClassifier or lgb.Booster
         return model
     except Exception:
         # Silent fallback to "no model" mode
