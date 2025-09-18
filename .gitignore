@@ -210,3 +210,5 @@ __marimo__/
 .idea
 *.db
 *.joblib
+config_sens.py
+.DS_Store

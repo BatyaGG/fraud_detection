@@ -1,14 +1,18 @@
 import pandas as pd
 import numpy as np
 from concurrent.futures import ProcessPoolExecutor, as_completed
-import sqlite3
-import pickle
 import warnings
+import psycopg2 as pg
+from psycopg2.extras import execute_values
+
+from config_sens import *
+
+pd.set_option('display.max_columns', None)
 
 warnings.filterwarnings('ignore')
 
-PARALLEL = 10
-DB_FILE = 'aggregate_dataframes.sqlite'
+PARALLEL = 5
+dests_table = 'dests_to_analyze'
 
 columns_to_agg = [
     'oldbalanceOrg',
@@ -25,58 +29,18 @@ columns_to_agg = [
 win_sizes = [7, 14, 28, 90, 180]
 
 
-def init_db():
-    """Initialize SQLite database with a results table."""
-    with sqlite3.connect(DB_FILE) as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS results (
-                dest TEXT PRIMARY KEY,
-                data BLOB
-            )
-        """)
-        conn.commit()
-
-
-def save_result(dest, df):
-    """Save DataFrame result to SQLite as a pickled BLOB."""
-    try:
-        pickled_data = pickle.dumps(df)
-        with sqlite3.connect(DB_FILE) as conn:
-            conn.execute("INSERT OR REPLACE INTO results (dest, data) VALUES (?, ?)", (str(dest), pickled_data))
-            conn.commit()
-    except sqlite3.Error as e:
-        print(f"Error saving result for {dest}: {e}")
-
-
-def get_processed_dests():
-    """Retrieve processed dests and their DataFrames from SQLite."""
-    results = {}
-    try:
-        with sqlite3.connect(DB_FILE) as conn:
-            cursor = conn.execute("SELECT dest, data FROM results")
-            results = {row[0]: pickle.loads(row[1]) for row in cursor.fetchall()}
-    except sqlite3.Error as e:
-        print(f"Error reading from {DB_FILE}: {e}")
-    return results
+db = pg.connect(host=db_host,
+                port=db_port,
+                database=db_name,
+                user=db_user,
+                password=db_password)
 
 
 def custom_aggregations(dest):
     try:
         result = {}
         group = df.loc[dest]
-        if isinstance(group, pd.Series):
-            for col in columns_to_agg:
-                for win_size in win_sizes:
-                    result[f'{col}_{win_size}_sum'] = [group[col]]
-                    result[f'{col}_{win_size}_avg'] = [group[col]]
-                    result[f'{col}_{win_size}_std'] = [None]
-                    result[f'{col}_{win_size}_count'] = [1]
-                    result[f'{col}_{win_size}_ma_diff_std'] = [None]
-                    result[f'{col}_{win_size}_xtreme_cnt_90'] = [0]
-                    result[f'{col}_{win_size}_xtreme_cnt_10'] = [0]
-            # group = group.to_frame().T
-            res = pd.DataFrame(result)
-            return res
+        group = group.reset_index()
         group = group.set_index('step').sort_index()
 
         for col in columns_to_agg:
@@ -109,10 +73,22 @@ def custom_aggregations(dest):
                     np.sum(w.values < w.quantile(0.1)) if not w.empty else 0
                     for w in rolling_windows
                 ], index=group.index)
-        res = pd.DataFrame(result)
-        print('Done', dest)
-        save_result(dest, res)
-        return res
+        res = pd.DataFrame(result, index=group.index)
+        res = pd.concat((group, res), axis=1)
+        res = res.reset_index()
+
+        with db.cursor() as cursor:
+            columns = res.columns.tolist()
+            values = [tuple(row) for row in res.to_numpy()]
+
+            query = f"INSERT INTO fraud_dataframe ({','.join(columns)}) VALUES %s ON CONFLICT DO NOTHING"
+            execute_values(cursor, query, values)
+            cursor.execute(f"DELETE FROM {dests_table} WHERE nameDest = %s", (dest,))
+
+            db.commit()
+            print(f"Done {dest}")
+
+        return dest
     except Exception as e:
         print(f'EXCEPTION for {dest}: {e}')
         return None
@@ -120,8 +96,7 @@ def custom_aggregations(dest):
 
 # Load and preprocess data
 df = pd.read_csv('PS_20174392719_1491204439457_log.csv')
-v_c = df['nameDest'].value_counts()
-dests_unique = sorted(v_c[v_c > 1].index.values)
+dests_unique = sorted(pd.read_sql_query(f'select * from {dests_table}', db)['namedest'].values)
 df = df[df['nameDest'].isin(dests_unique)]
 
 df['balanceChngOrig'] = (df['newbalanceOrig'] - df['oldbalanceOrg'])
@@ -133,18 +108,13 @@ df = df.set_index('nameDest')
 
 
 if __name__ == '__main__':
-    init_db()
-    processed_dests = get_processed_dests()
-    dests_to_process = [dest for dest in dests_unique if str(dest) not in processed_dests]
-
-    print(
-        f"Total dests: {len(dests_unique)}, To process: {len(dests_to_process)}, Already processed: {len(processed_dests)}")
+    print(f"To process: {len(dests_unique)}")
 
     # Process remaining dests
     with ProcessPoolExecutor(max_workers=PARALLEL) as executor:
         futures = {
             executor.submit(custom_aggregations, dest): dest
-            for dest in dests_to_process
+            for dest in dests_unique
         }
         for future in as_completed(futures):
             dest_slice = futures[future]
