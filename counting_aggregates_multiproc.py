@@ -1,3 +1,4 @@
+import time
 import pandas as pd
 import numpy as np
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -108,7 +109,10 @@ df = df.set_index('nameDest')
 
 
 if __name__ == '__main__':
-    print(f"To process: {len(dests_unique)}")
+    print(f"To process: {len(dests_unique)} {time.time()}")
+
+    # custom_aggregations(dests_unique[0])
+    # assert False
 
     # Process remaining dests
     with ProcessPoolExecutor(max_workers=PARALLEL) as executor:
