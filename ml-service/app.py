@@ -19,7 +19,9 @@ model = loaded_data['model']
 features = loaded_data['features']
 
 
-# shap_values = loaded_data['shap_values']
+shap_values = loaded_data['shap_values']
+shap_values = shap_values[np.random.permutation(shap_values.shape[0])[:1000]]
+shap_values = np.round(shap_values, 3)
 
 
 @app.route("/health", methods=["GET"])
@@ -35,7 +37,6 @@ def version():
 @app.route("/score", methods=["POST"])
 def score():
     try:
-        print("SCore")
         payload = request.get_json(force=True, silent=False)
         rows: List[Dict[str, Any]] = payload.get("rows", [])
         if not isinstance(rows, list) or len(rows) == 0:
@@ -90,7 +91,7 @@ def score():
             "scores": scores,
             "warnings": [],
             'features': features,
-            # 'shap_values': shap_values
+            'shap_values': shap_values.tolist()
         }), 200
 
     except Exception as e:
