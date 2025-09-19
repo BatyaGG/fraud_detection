@@ -61,7 +61,7 @@ def score():
         fraud_indices = []
         fraud_scores = []
         for idx in idxs:
-            row = {feat: np.random.rand() * 1000 for feat in features}
+            row = {feat: round(np.random.rand() * 1000) for feat in features}
             fraud_indices.append(idx)
             fraud_scores.append(0.95)
             fraud_rows.append(row)
