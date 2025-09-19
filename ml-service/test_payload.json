@@ -1,0 +1,38 @@
+{
+  "rows": [
+    {
+      "Fiscal Year": 2024,
+      "Purchase Order Date": "2023-09-12",
+      "Purchase Order": 742148,
+      "Purchase Order Line": 2.0,
+      "Contract Number": null,
+      "Contract Title": null,
+      "Purchasing Department": "REC",
+      "Purchasing Department Title": "REC Recreation & Park Commsn",
+      "Post Date - Original": "2023/09/12",
+      "Post Date - Current": "2023/11/30",
+      "Commodity Code": 75077,
+      "Commodity Title": "Sand and Gravel",
+      "Supplier & Other Non-Supplier Payees": "BROWN SAND INC",
+      "Supplier Street": "PO BOX 1429",
+      "Supplier City": "LATHROP",
+      "Supplier State": "CA",
+      "Supplier ZIP Code": "95330",
+      "Supplier Contact": "Jana Bolter",
+      "Supplier Email": "jbolter@brownsandinc.com",
+      "Supplier Phone": null,
+      "Encumbered Quantity": 0,
+      "Encumbered Amount": 4648.94,
+      "data_as_of": "2023/11/30 08:06:26 PM",
+      "data_loaded_at": "2025/09/15 02:05:34 AM",
+      "PO6": 742148,
+      "PO6_key": 742148,
+      "vouchers_paid_sum": 9998.93,
+      "vouchers_pending_sum": 0.0,
+      "encum_balance_sum": 0.0,
+      "vouchers_count": 1.0,
+      "first_voucher_date": "2023-11-30 20:06:26",
+      "last_voucher_date": "2023-11-30 20:06:26"
+    }
+  ]
+}

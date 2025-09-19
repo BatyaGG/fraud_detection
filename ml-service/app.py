@@ -6,19 +6,20 @@ import numpy as np
 from typing import List, Dict, Any
 from flask import Flask, request, jsonify
 
-from model_service.model import load_model, predict_proba_with_shap
-from model_service.transform import to_feature_frame, DEFAULT_FEATURE_ORDER, normalize_input_rows
+from model_service.model import predict_proba_with_shap
+from model_service.transform import to_feature_frame, normalize_input_rows
 
 APP_VERSION = os.getenv("APP_VERSION", "lgbm_iforest_2025-09-16")
 FRAUD_THRESHOLD = float(os.getenv("FRAUD_THRESHOLD", "0.90"))
 
 app = Flask(__name__)
-# model = load_model("weights/lightgbm.bin")
 
-loaded_data = joblib.load('prod_data.joblib')
+loaded_data = joblib.load('weights/prod_data.joblib')
 model = loaded_data['model']
 features = loaded_data['features']
-shap_values = loaded_data['shap_values']
+
+
+# shap_values = loaded_data['shap_values']
 
 
 @app.route("/health", methods=["GET"])
@@ -34,13 +35,14 @@ def version():
 @app.route("/score", methods=["POST"])
 def score():
     try:
+        print("SCore")
         payload = request.get_json(force=True, silent=False)
         rows: List[Dict[str, Any]] = payload.get("rows", [])
         if not isinstance(rows, list) or len(rows) == 0:
             return jsonify({"error": "payload must contain non-empty 'rows' list"}), 400
 
         # keep original order; normalize -> features
-        rows_norm = normalize_input_rows(rows)
+        rows_norm = normalize_input_rows(rows, features)
         X, row_ids = to_feature_frame(rows_norm)
 
         proba, shap_contribs, feature_names = predict_proba_with_shap(model, X)
@@ -52,37 +54,17 @@ def score():
             feat_vals = contrib[:-1] if len(contrib) == len(feature_names) + 1 else contrib
 
             top_idx = np.argsort(-np.abs(feat_vals))[:3]
-            top_features = [[feature_names[j], float(round(float(feat_vals[j]), 4))] for j in top_idx]
+            top_features = [{feature_names[j]: float(round(float(feat_vals[j]), 4))} for j in top_idx]
 
             ml_score = float(round(float(proba[i]), 6))
             anomaly_score = ml_score  # simple for now; replace with IForest later
-
-            hints = []
-            if "log_amount" in X.columns and float(X.iloc[i]["log_amount"]) > 10:
-                hints.append("high amount")
-            if "delta_origin" in X.columns and float(X.iloc[i]["delta_origin"]) < 0:
-                hints.append("origin balance drop")
-            if "type_PAYMENT" in X.columns and int(X.iloc[i]["type_PAYMENT"]) == 1:
-                hints.append("payment pattern")
-
-            # ---- MOCK FRAUD OVERRIDE ----
-            # If the original input row contains the parameter "mock_fraud",
-            # force this row to be treated as fraud.
-            if i < len(rows) and ("mock_fraud" in rows[i]):
-                ml_score = max(ml_score, 0.99)
-                anomaly_score = max(anomaly_score, 0.99)
-                # mark the reason and make sure top_features includes a visible flag
-                hints.insert(0, "MOCK_FRAUD override")
-                top_features = [["mock_flag", 0.99]] + top_features[:2]
-
-            reason_hint = "; ".join(hints) if hints else "pattern check requested"
 
             scores.append({
                 "row_id": int(row_ids[i]),
                 "ml_score": ml_score,
                 "anomaly_score": float(round(anomaly_score, 6)),
                 "top_features": top_features,
-                "reason_hint": reason_hint
+                "reason_hint": "No reason"
             })
 
         # Collect exact input rows flagged as fraud (by threshold)
@@ -94,7 +76,6 @@ def score():
                 "row_index": i,
                 "row_id": scores[i]["row_id"],
                 "ml_score": scores[i]["ml_score"],
-                "anomaly_score": scores[i]["anomaly_score"],
                 "reason_hint": scores[i]["reason_hint"],
                 "top_features": scores[i]["top_features"],
             })
@@ -109,7 +90,7 @@ def score():
             "scores": scores,
             "warnings": [],
             'features': features,
-            'shap_values': shap_values
+            # 'shap_values': shap_values
         }), 200
 
     except Exception as e:

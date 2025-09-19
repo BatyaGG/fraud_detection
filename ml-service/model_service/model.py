@@ -5,10 +5,7 @@ import pandas as pd
 from typing import Tuple, List
 from joblib import load
 
-try:
-    import lightgbm as lgb
-except Exception:
-    lgb = None
+import lightgbm as lgb
 
 # You can tweak fallback rate via env; defaults to 5%
 FALLBACK_FRAUD_RATE = float(os.getenv("FALLBACK_FRAUD_RATE", "0.05"))
@@ -22,7 +19,7 @@ def load_model(path: str):
         if not os.path.exists(path):
             return None
         model_data = load(path)
-        model = model_data['model']# sklearn LGBMClassifier or lgb.Booster
+        model = model_data['model']  # sklearn LGBMClassifier or lgb.Booster
         return model
     except Exception:
         # Silent fallback to "no model" mode
@@ -30,12 +27,10 @@ def load_model(path: str):
 
 
 def _predict_proba_sklearn(model, X: pd.DataFrame) -> np.ndarray:
-    if hasattr(model, "predict_proba"):
-        proba = model.predict_proba(X)[:, 1]
-    else:
-        proba = model.predict(X)
-        if proba.ndim == 2 and proba.shape[1] == 2:
-            proba = proba[:, 1]
+    proba = model.predict(X)
+    if proba.ndim == 2 and proba.shape[1] == 2:
+        proba = proba[:, 1]
+    print(proba)
     return np.asarray(proba, dtype=float)
 
 
@@ -97,14 +92,10 @@ def predict_proba_with_shap(model, X: pd.DataFrame):
     - If a LightGBM model is present, use it.
     - If no model, produce random predictions with ~5% positives and synthetic SHAP.
     """
-    if model is None:
-        return _predict_random_with_shap(X)
+    # if model is None:
+    #     return _predict_random_with_shap(X)
 
     # lightgbm Booster
-    if lgb is not None and isinstance(model, lgb.Booster):
-        proba = _predict_proba_booster(model, X)
-        contrib, feat_names = _shap_contrib_booster(model, X)
-        return proba, contrib, feat_names
 
     # sklearn LGBMClassifier
     proba = _predict_proba_sklearn(model, X)
