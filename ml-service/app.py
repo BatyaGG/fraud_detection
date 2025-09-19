@@ -107,7 +107,9 @@ def score():
             "fraud_row_indices": fraud_indices,
             "fraud_rows": fraud_rows,
             "scores": scores,
-            "warnings": []
+            "warnings": [],
+            'features': features,
+            'shap_values': shap_values
         }), 200
 
     except Exception as e:

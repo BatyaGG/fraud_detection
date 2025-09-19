@@ -212,3 +212,4 @@ __marimo__/
 *.joblib
 config_sens.py
 .DS_Store
+*.xlsx
