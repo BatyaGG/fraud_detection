@@ -72,7 +72,7 @@ def score():
             "fraud_threshold": FRAUD_THRESHOLD,
             "fraud_count": len(fraud_rows),
             "fraud_row_indices": fraud_indices,
-            "ml_scores": scores,
+            "ml_scores": fraud_scores,
             "fraud_rows": fraud_rows,
         }), 200
 
