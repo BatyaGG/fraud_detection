@@ -18,7 +18,6 @@ loaded_data = joblib.load('weights/prod_data.joblib')
 model = loaded_data['model']
 features = loaded_data['features']
 
-
 shap_values = loaded_data['shap_values']
 shap_values = shap_values[np.random.permutation(shap_values.shape[0])[:1000]]
 shap_values = np.round(shap_values, 3)
@@ -91,7 +90,18 @@ def score():
             "scores": scores,
             "warnings": [],
             'features': features,
-            'shap_values': shap_values.tolist()
+        }), 200
+
+    except Exception as e:
+        app.logger.error("Scoring error: %s\n%s", e, traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/shap", methods=["GET"])
+def shap():
+    try:
+        return jsonify({
+            "shap": shap_values.tolist()
         }), 200
 
     except Exception as e:
