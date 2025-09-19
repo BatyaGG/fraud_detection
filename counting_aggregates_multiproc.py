@@ -1,18 +1,16 @@
+import warnings
 from datetime import datetime
+from concurrent.futures import ProcessPoolExecutor, as_completed
+
 import pandas as pd
 import numpy as np
-from concurrent.futures import ProcessPoolExecutor, as_completed
-import warnings
 import psycopg2 as pg
 from psycopg2.extras import execute_values
 
 from config_sens import *
-
-pd.set_option('display.max_columns', None)
-
 warnings.filterwarnings('ignore')
 
-PARALLEL = 5
+PARALLEL = 10
 dests_table = 'dests_to_analyze'
 
 columns_to_agg = [
