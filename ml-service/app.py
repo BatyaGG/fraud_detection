@@ -48,6 +48,8 @@ def score():
         proba, shap_contribs, feature_names = predict_proba_with_shap(model, X)
 
         scores = []
+        fraud_indices = []
+        fraud_rows = []
         for i in range(len(X)):
             contrib = shap_contribs[i]
             # LightGBM pred_contrib includes bias as last column; drop it if present
@@ -59,27 +61,27 @@ def score():
             ml_score = float(round(float(proba[i]), 6))
             anomaly_score = ml_score  # simple for now; replace with IForest later
 
-            scores.append({
+            score_dict = {
                 "row_id": int(row_ids[i]),
                 "ml_score": ml_score,
                 "anomaly_score": float(round(anomaly_score, 6)),
-                "top_features": top_features,
-                "reason_hint": "No reason"
-            })
+            }
+            if score_dict["ml_score"] >= FRAUD_THRESHOLD:
+                enriched = dict(rows[i])  # original row
+                enriched.update({
+                    "row_index": i,
+                    "row_id": scores[i]["row_id"],
+                    "ml_score": scores[i]["ml_score"],
+                    "reason_hint": "Fraud detected by model",
+                    "top_features": top_features,
+                })
+                fraud_rows.append(enriched)
+
+            scores.append(score_dict)
 
         # Collect exact input rows flagged as fraud (by threshold)
         fraud_indices = [i for i, s in enumerate(scores) if s["ml_score"] >= FRAUD_THRESHOLD]
         fraud_rows = []
-        for i in fraud_indices:
-            enriched = dict(rows[i])  # original row
-            enriched.update({
-                "row_index": i,
-                "row_id": scores[i]["row_id"],
-                "ml_score": scores[i]["ml_score"],
-                "reason_hint": scores[i]["reason_hint"],
-                "top_features": scores[i]["top_features"],
-            })
-            fraud_rows.append(enriched)
 
         return jsonify({
             "model_version": APP_VERSION,
