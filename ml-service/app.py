@@ -58,11 +58,12 @@ def score():
             return list(range(length))  # all indices
         idxs = random.sample(range(length), n)
 
+        fraud_indices = []
+        fraud_scores = []
         for idx in idxs:
             row = {feat: np.random.rand() * 1000 for feat in features}
-            row["Supplier & Other Non-Supplier Payees"] = rows[idx].get("Supplier & Other Non-Supplier Payees", "<Vendor>")
-            row["Purchase Order"] = rows[idx].get("Purchase Order", "<PO>")
-            row["ml_score"] = 0.95
+            fraud_indices.append(idx)
+            fraud_scores.append(0.95)
             fraud_rows.append(row)
 
 
@@ -71,6 +72,7 @@ def score():
             "fraud_threshold": FRAUD_THRESHOLD,
             "fraud_count": len(fraud_rows),
             "fraud_row_indices": fraud_indices,
+            "ml_scores": scores,
             "fraud_rows": fraud_rows,
         }), 200
 

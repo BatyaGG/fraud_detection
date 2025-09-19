@@ -6,8 +6,8 @@ import math
 import pandas as pd
 from datetime import date
 
-# URL = os.getenv("URL", "http://207.180.201.244:8000")
-URL = os.getenv("URL", "http://localhost:8000")
+URL = os.getenv("URL", "http://207.180.201.244:8000")
+# URL = os.getenv("URL", "http://localhost:8000")
 K = int(os.getenv("TOPK", "8"))
 
 
@@ -92,6 +92,10 @@ def main():
     # rows = payload["rows"]
     payload = csv_to_payload("po_vendor_x.csv")
     res = post_json("/score", payload)
+
+    with open("res.json", "w") as f:
+        json.dump(res, f, indent=2)
+
     print()
     print(res)
 
