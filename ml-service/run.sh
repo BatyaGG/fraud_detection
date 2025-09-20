@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 set -e
-export FLASK_APP=app.py
-export APP_VERSION="lgbm_iforest_2025-09-16"
-python app.py
+
+export RUNNER="gunicorn"
+
+gunicorn app:app \
+         -b 0.0.0.0:8000 \
+         --timeout=10 \
+         --log-level=debug \
+         --workers=8

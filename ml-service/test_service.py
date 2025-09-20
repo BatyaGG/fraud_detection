@@ -90,14 +90,18 @@ def main():
 
     # payload = json.load(open("test_payload.json"))
     # rows = payload["rows"]
-    payload = csv_to_payload("po_vendor_x.csv")
-    res = post_json("/score", payload)
+    import time
+    s = time.time()
+    for i in range(100):
+        payload = csv_to_payload("po_vendor_x.csv")
+        res = post_json("/score", payload)
 
-    with open("res.json", "w") as f:
-        json.dump(res, f, indent=2)
+        with open("res.json", "w") as f:
+            json.dump(res, f, indent=2)
 
+    avg = (time.time() - s) / 100
+    print(f"[i] Average time: {avg:.2f}s")
     print()
-    print(res)
 
 
 if __name__ == "__main__":

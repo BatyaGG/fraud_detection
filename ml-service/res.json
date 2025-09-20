@@ -76,5 +76,5 @@
     0.95
   ],
   "model_version": "lgbm_iforest_2025-09-16",
-  "scores_download_url": "http://localhost:8000/results/03cd9c5a94b44a93b4cef240da232d0e"
+  "scores_download_url": "http://207.180.201.244:8000/results/e230bfb70c3d4abd88ef68f87c7be39b"
 }
