@@ -6,8 +6,8 @@ import math
 import pandas as pd
 from datetime import date
 
-URL = os.getenv("URL", "http://207.180.201.244:8000")
-# URL = os.getenv("URL", "http://localhost:8000")
+# URL = os.getenv("URL", "http://207.180.201.244:8000")
+URL = os.getenv("URL", "http://localhost:8000")
 K = int(os.getenv("TOPK", "8"))
 
 

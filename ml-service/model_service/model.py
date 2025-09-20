@@ -33,7 +33,7 @@ def _shap_contrib_sklearn(model, X: pd.DataFrame) -> Tuple[np.ndarray, List[str]
             contrib = model.predict(X, pred_contrib=True)
             feature_names = list(X.columns)
             return contrib, feature_names
-        except TypeError:
+        except Exception:
             pass
     zeros = np.zeros((len(X), len(X.columns)))
     return zeros, list(X.columns)

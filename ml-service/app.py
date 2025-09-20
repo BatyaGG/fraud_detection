@@ -46,26 +46,16 @@ def score():
         rows_norm = normalize_input_rows(rows, features)
         X, row_ids = to_feature_frame(rows_norm)
 
-        scores = []
-
-
-        fraud_indices = [i for i, s in enumerate(scores) if s["ml_score"] >= FRAUD_THRESHOLD]
+        scores, contrib, feat_names = predict_proba_with_shap(model, X)
+        fraud_indices = [i for i, score in enumerate(scores) if score >= FRAUD_THRESHOLD]
         fraud_rows = []
-
-        length = len(rows)
-        n = 5
-        if length <= n:
-            return list(range(length))  # all indices
-        idxs = random.sample(range(length), n)
-
-        fraud_indices = []
         fraud_scores = []
-        for idx in idxs:
-            row = {feat: round(np.random.rand() * 1000) for feat in features}
-            fraud_indices.append(idx)
-            fraud_scores.append(0.95)
+        import time
+        for idx in fraud_indices:
+            row_norm = rows_norm[idx]
+            row = {feat: row_norm.get(feat, 0) for feat in features}
+            fraud_scores.append(scores[idx])
             fraud_rows.append(row)
-
 
         return jsonify({
             "model_version": APP_VERSION,
