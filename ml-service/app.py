@@ -90,7 +90,7 @@ def score():
             "fraud_row_indices": fraud_indices,
             "ml_scores": fraud_scores,
             "fraud_rows": fraud_rows,
-            "scores_download_url": download_url
+            "scores_download_url": download_url.replace("localhost", "207.180.201.244")
         }), 200
 
     except Exception as e:
